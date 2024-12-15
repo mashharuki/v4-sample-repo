@@ -10,6 +10,9 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 
+/**
+ * サンプル用のCounterコントラクト
+ */
 contract Counter is BaseHook {
     using PoolIdLibrary for PoolKey;
 
@@ -24,8 +27,17 @@ contract Counter is BaseHook {
     mapping(PoolId => uint256 count) public beforeAddLiquidityCount;
     mapping(PoolId => uint256 count) public beforeRemoveLiquidityCount;
 
+    event BeforeSwap(PoolId key);
+
+    /**
+     * コンストラクター
+     * @param _poolManager poolManager
+     */
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {}
 
+    /**
+     * フックの権限を取得するメソッド
+     */
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
             beforeInitialize: false,
@@ -49,15 +61,22 @@ contract Counter is BaseHook {
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
 
+    /**
+     * swapする前にインクリメントするメソッド
+     */
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata)
         external
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         beforeSwapCount[key.toId()]++;
+        emit BeforeSwap(key.toId());
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
+    /**
+     * swapした後にインクリメントするメソッド
+     */
     function afterSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)
         external
         override
@@ -67,6 +86,9 @@ contract Counter is BaseHook {
         return (BaseHook.afterSwap.selector, 0);
     }
 
+    /**
+     * 流動性を追加する前にインクリメントするメソッド
+     */
     function beforeAddLiquidity(
         address,
         PoolKey calldata key,
@@ -77,6 +99,9 @@ contract Counter is BaseHook {
         return BaseHook.beforeAddLiquidity.selector;
     }
 
+    /**
+     * 流動性を取り除く前にインクリメントするメソッド
+     */
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata key,

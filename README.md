@@ -42,13 +42,34 @@ Other than writing unit tests (recommended!), you can only deploy & test hooks o
 
 ```bash
 # start anvil, a local EVM chain
+# ローカルチェーンを起動する。
 anvil
+```
 
+```bash
 # in a new terminal
 forge script script/Anvil.s.sol \
     --rpc-url http://localhost:8545 \
     --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
     --broadcast
+```
+
+実行結果
+
+```bash
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /Users/harukikondo/git/v4-sample-repo/broadcast/Anvil.s.sol/31337/run-latest.json
+
+Sensitive values saved to: /Users/harukikondo/git/v4-sample-repo/cache/Anvil.s.sol/31337/run-latest.json
+```
+
+このスクリプトの実行後に値を取得してみる。
+
+```bash
+cast call 0x48c4889bcca45e7e6dcd17c34e2aa7df317fcac0 \
+"beforeSwapCount(bytes32)(uint256)" 0xfffffffffffffffffffffffffffffffffffffffffffffffff202b086d4032aed \
+--rpc-url http://localhost:8545
 ```
 
 See [script/](script/) for hook deployment, pool creation, liquidity provision, and swapping.
@@ -94,3 +115,6 @@ Additional resources:
 
 [v4-by-example](https://v4-by-example.org)
 
+### 参考文献
+1. [Uniswap v4 プロトコルをソースコードから理解する](https://recruit.gmo.jp/engineer/jisedai/blog/uniswap-v4/)
+2. [Uniswap v4のhook実装](https://recruit.gmo.jp/engineer/jisedai/blog/uniswap-v4-impl/)

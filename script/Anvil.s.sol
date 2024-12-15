@@ -34,8 +34,12 @@ contract CounterScript is Script, DeployPermit2 {
 
     function setUp() public {}
 
+    /**
+     * ローカルネットワークで実行するための関数
+     */
     function run() public {
         vm.broadcast();
+        // Deploy the pool manager Contract
         IPoolManager manager = deployPoolManager();
 
         // hook contracts must have specific flags encoded in the address
@@ -52,6 +56,7 @@ contract CounterScript is Script, DeployPermit2 {
         // Deploy the hook using CREATE2 //
         // ----------------------------- //
         vm.broadcast();
+        // Counterコントラクトをデプロイする。
         Counter counter = new Counter{salt: salt}(manager);
         require(address(counter) == hookAddress, "CounterScript: hook address mismatch");
 
@@ -63,6 +68,7 @@ contract CounterScript is Script, DeployPermit2 {
 
         // test the lifecycle (create pool, add liquidity, swap)
         vm.startBroadcast();
+        // testLifecycleメソッドを呼び出す。
         testLifecycle(manager, address(counter), posm, lpRouter, swapRouter);
         vm.stopBroadcast();
     }
@@ -108,6 +114,9 @@ contract CounterScript is Script, DeployPermit2 {
         }
     }
 
+    /**
+     * テスト用のメソッド
+     */
     function testLifecycle(
         IPoolManager manager,
         address hook,
@@ -115,6 +124,7 @@ contract CounterScript is Script, DeployPermit2 {
         PoolModifyLiquidityTest lpRouter,
         PoolSwapTest swapRouter
     ) internal {
+        // テスト用ERC20トークンをデプロイする。そしてミントする。
         (MockERC20 token0, MockERC20 token1) = deployTokens();
         token0.mint(msg.sender, 100_000 ether);
         token1.mint(msg.sender, 100_000 ether);
@@ -123,8 +133,16 @@ contract CounterScript is Script, DeployPermit2 {
 
         // initialize the pool
         int24 tickSpacing = 60;
+        uint24 swapFee = 3000; // 0.05% swap fee, 3000 = 0.30%
+        // setting swap fee
         PoolKey memory poolKey =
-            PoolKey(Currency.wrap(address(token0)), Currency.wrap(address(token1)), 3000, tickSpacing, IHooks(hook));
+            PoolKey(
+                Currency.wrap(address(token0)), 
+                Currency.wrap(address(token1)), 
+                swapFee, // setting the swap fee
+                tickSpacing, 
+                IHooks(hook)
+            );
         manager.initialize(poolKey, Constants.SQRT_PRICE_1_1);
 
         // approve the tokens to the routers
@@ -132,7 +150,7 @@ contract CounterScript is Script, DeployPermit2 {
         token1.approve(address(lpRouter), type(uint256).max);
         token0.approve(address(swapRouter), type(uint256).max);
         token1.approve(address(swapRouter), type(uint256).max);
-
+        // approve the tokens to the POSM
         approvePosmCurrency(posm, Currency.wrap(address(token0)));
         approvePosmCurrency(posm, Currency.wrap(address(token1)));
 
@@ -167,6 +185,7 @@ contract CounterScript is Script, DeployPermit2 {
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+        // swapする。
         swapRouter.swap(poolKey, params, testSettings, ZERO_BYTES);
     }
 }
